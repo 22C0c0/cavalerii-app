@@ -1,9 +1,13 @@
+# Secrete — nu se încarcă niciodată în repo
 .env.local
 .env.keys
+
+# Dependențe și build-uri
 node_modules
 dist
 isolate
+
+# Cache-uri locale
 .fontcache
 fonts.conf
 package-lock.json
-src/convex/_generated

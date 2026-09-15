@@ -111,7 +111,24 @@ class RootErrorBoundary extends React.Component<
   }
 }
 
-const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
+/**
+ * Resolve the Convex backend URL.
+ *
+ * In the Freebuff/Vly environment the URL is normally injected by the managed
+ * convex dev process. On GitHub Pages builds the value comes from the
+ * VITE_CONVEX_URL build-time secret. As a last-resort fallback we keep the
+ * known club deployment URL so the client never crashes with "Provided address
+ * was not an absolute URL" when the env var is missing.
+ */
+function resolveConvexUrl(): string {
+  const url = import.meta.env.VITE_CONVEX_URL as string | undefined;
+  if (url && /^https?:\/\//.test(url)) return url;
+  return "https://amiable-stork-280.convex.cloud";
+}
+
+const convex = new ConvexReactClient(resolveConvexUrl());
+
+
 
 
 

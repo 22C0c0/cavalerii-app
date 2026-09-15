@@ -27,6 +27,15 @@ if [ -z "$CONVEX_URL" ]; then
   [ -z "$CONVEX_URL" ] && { echo "Eroare: URL Convex lipsă — aplicația va porni fără backend."; }
 fi
 
+# 1b. Identitate git (obligatorie pentru commit — altfel "Author identity unknown")
+if ! git config user.email >/dev/null 2>&1 || ! git config user.name >/dev/null 2>&1; then
+  echo "Git nu are identitatea ta configurată (necesară pentru commit)."
+  read -rp "Numele afișat la commit (ex: 22C0c0): " GIT_NAME
+  read -rp "Emailul asociat contului GitHub: " GIT_EMAIL
+  git config --global user.name "$GIT_NAME"
+  git config --global user.email "$GIT_EMAIL"
+fi
+
 # 2. URL-ul repo-ului GitHub
 read -rp "URL-ul repo-ului GitHub (ex: https://github.com/utilizator/acs-cavalerii-suceava.git): " REPO_URL
 [ -z "$REPO_URL" ] && { echo "Eroare: URL lipsă."; exit 1; }
