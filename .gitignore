@@ -1,0 +1,9 @@
+.env.local
+.env.keys
+node_modules
+dist
+isolate
+.fontcache
+fonts.conf
+package-lock.json
+src/convex/_generated

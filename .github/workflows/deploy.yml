@@ -1,0 +1,59 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      # Project site: https://<user>.github.io/<repo>/
+      # If the repo is named <user>.github.io, change this to "/".
+      VITE_BASE_PATH: /${{ github.event.repository.name }}/
+      # Backend URL, e.g. https://<deployment>.convex.cloud
+      # Add it in Repo → Settings → Secrets and variables → Actions.
+      VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Generate Convex types
+        run: bunx convex codegen
+
+      - name: Build
+        run: bun run build
+
+      - name: SPA fallback (404.html)
+        run: cp dist/index.html dist/404.html
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
