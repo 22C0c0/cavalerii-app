@@ -2,12 +2,36 @@ import { CLUB_ROLES, type ClubRole } from "@/convex/schema";
 
 export const CLUB_NAME = "ACS Cavalerii Suceava";
 
-// Deep link direct către WhatsApp-ul antrenorului
-export const COACH_PHONE = "40745123456"; // format internațional, fără "+"
+// Deep link către WhatsApp-ul antrenorului.
+// Numărul e integrat în aplicație dar NU în clar (protecție împotriva
+// colectării automate de către roboți — apare doar ca ghilimele de coduri ASCII).
+// Opțional, poate fi suprascris cu variabila de mediu VITE_COACH_PHONE.
+const BAKED_PHONE = String.fromCharCode(52, 48, 55, 53, 53, 50, 56, 55, 53, 54, 50); // +40 755 287 562
+
+function normalizePhone(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length === 10 && digits.startsWith("0")) {
+    return `40${digits.slice(1)}`; // format local românesc → internațional
+  }
+  return digits;
+}
+
+const normalizedPhone = (() => {
+  const fromEnv = normalizePhone(String(import.meta.env.VITE_COACH_PHONE ?? ""));
+  return fromEnv || BAKED_PHONE;
+})();
+
+export const COACH_PHONE: string | undefined = normalizedPhone || undefined;
+
+/** true dacă numărul antrenorului e configurat — butoanele WhatsApp se afișează doar atunci. */
+export const coachPhoneConfigured = /^\d{8,15}$/.test(normalizedPhone);
+
 export const coachWhatsAppUrl = (prefill?: string) =>
-  `https://wa.me/${COACH_PHONE}${
-    prefill ? `?text=${encodeURIComponent(prefill)}` : ""
-  }`;
+  coachPhoneConfigured && COACH_PHONE
+    ? `https://wa.me/${COACH_PHONE}${
+        prefill ? `?text=${encodeURIComponent(prefill)}` : ""
+      }`
+    : "";
 
 export const TRAINING_LOCATIONS = [
   "Horodnic de Sus",

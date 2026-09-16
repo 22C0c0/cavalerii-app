@@ -7,7 +7,7 @@ import {
   Trophy,
   Users,
 } from "lucide-react";
-import { coachWhatsAppUrl } from "@/lib/club";
+import { coachPhoneConfigured, coachWhatsAppUrl } from "@/lib/club";
 import { ClubLogo } from "@/components/ClubLogo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -72,19 +72,21 @@ export default function Landing() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              asChild
-              variant="ghost"
-              className="hidden text-white/95 hover:bg-white/10 hover:text-white sm:inline-flex"
-            >
-              <a
-                href={coachWhatsAppUrl()}
-                target="_blank"
-                rel="noopener noreferrer"
+            {coachPhoneConfigured && (
+              <Button
+                asChild
+                variant="ghost"
+                className="hidden text-white/95 hover:bg-white/10 hover:text-white sm:inline-flex"
               >
-                WhatsApp antrenor
-              </a>
-            </Button>
+                <a
+                  href={coachWhatsAppUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  WhatsApp antrenor
+                </a>
+              </Button>
+            )}
             <Button
               asChild
               className="bg-gold font-semibold text-gold-foreground hover:bg-gold/90"

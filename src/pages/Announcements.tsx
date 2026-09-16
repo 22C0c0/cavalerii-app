@@ -18,7 +18,7 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
 import { useAuth } from "@/hooks/use-auth";
-import { isStaff } from "@/lib/club";
+import { coachPhoneConfigured, coachWhatsAppUrl, isStaff } from "@/lib/club";
 import {
   Loader2,
   Megaphone,
@@ -123,9 +123,9 @@ export default function Announcements() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          ) : (
+          ) : coachPhoneConfigured ? (
             <a
-              href="https://wa.me/40745123456?text=Bun%C4%83%20ziua!"
+              href={coachWhatsAppUrl("Bună ziua!")}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -134,7 +134,7 @@ export default function Announcements() {
                 Contact antrenor
               </Button>
             </a>
-          )
+          ) : null
         }
       />
 

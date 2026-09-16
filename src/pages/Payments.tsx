@@ -16,11 +16,12 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { useAuth } from "@/hooks/use-auth";
-import { coachWhatsAppUrl, isStaff } from "@/lib/club";
+import { coachPhoneConfigured, coachWhatsAppUrl, isStaff } from "@/lib/club";
 import {
   BadgeCheck,
   CircleAlert,
   CreditCard,
+  Download,
   Loader2,
   MessageCircle,
 } from "lucide-react";
@@ -47,6 +48,79 @@ function lastNMonths(n: number): string[] {
     out.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
   }
   return out;
+}
+
+/* ---------- export Excel (CSV compatibil Excel, UTF-8 BOM, separator ; ) ---------- */
+
+function csvField(value: string | number | null | undefined): string {
+  const s = value == null ? "" : String(value);
+  return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function formatPaidDate(ts: number | null): string {
+  if (!ts) return "";
+  const d = new Date(ts);
+  return d.toLocaleDateString("ro-RO", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+type OverviewRow = {
+  athleteName: string;
+  ageGroup: string | null;
+  status: "paid" | "unpaid";
+  amount: number | null;
+  paidAt: number | null;
+};
+
+export function downloadPaymentsCsv(
+  month: string,
+  rows: OverviewRow[],
+): void {
+  const paid = rows.filter((r) => r.status === "paid").length;
+  const unpaid = rows.length - paid;
+
+  const lines: string[] = [
+    csvField("ACS Cavalerii Suceava — Situație cotizații"),
+    csvField("Luna"),
+    csvField(monthLabel(month)),
+    "",
+    [
+      csvField("Nume sportiv"),
+      csvField("Grupa"),
+      csvField("Status"),
+      csvField("Suma (lei)"),
+      csvField("Data plății"),
+    ].join(";"),
+    ...rows.map((r) =>
+      [
+        csvField(r.athleteName),
+        csvField(r.ageGroup ?? "—"),
+        csvField(r.status === "paid" ? "Achitat" : "Restant"),
+        csvField(r.amount ?? ""),
+        csvField(formatPaidDate(r.paidAt)),
+      ].join(";"),
+    ),
+    "",
+    `${csvField("Total achitate")};${paid}`,
+    `${csvField("Total restante")};${unpaid}`,
+    `${csvField("Total sportivi")};${rows.length}`,
+  ];
+
+  // BOM UTF-8: Excel recunoaște diacriticele românești
+  const blob = new Blob(["\uFEFF" + lines.join("\r\n")], {
+    type: "text/csv;charset=utf-8",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `cotizatii-cavalerii-${month}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 export default function Payments() {
@@ -128,7 +202,7 @@ function MemberPayments() {
                 : `Mulțumim! Plata pentru ${monthLabel(month)} este înregistrată.`}
             </p>
           </div>
-          {unpaid && (
+          {unpaid && coachPhoneConfigured && (
             <a
               href={coachWhatsAppUrl(
                 `Bună ziua! Trimit dovada plății cotizației ${monthLabel(month)} pentru ${summary.athleteName}.`,
@@ -251,6 +325,19 @@ function StaffPayments() {
             onChange={(e) => setAmount(e.target.value)}
           />
         </div>
+        <Button
+          variant="outline"
+          className="ml-auto"
+          onClick={() => {
+            if (!overview) return;
+            downloadPaymentsCsv(month, overview.rows);
+            toast.success("Fișierul a fost descărcat.");
+          }}
+          disabled={!overview || overview.rows.length === 0}
+        >
+          <Download className="size-4" />
+          Export Excel
+        </Button>
       </div>
 
       {overview === undefined ? (

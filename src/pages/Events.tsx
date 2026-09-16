@@ -27,6 +27,7 @@ import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
 import { useAuth } from "@/hooks/use-auth";
 import {
+  coachPhoneConfigured,
   coachWhatsAppUrl,
   formatDateRO,
   formatLongDateRO,
@@ -226,7 +227,7 @@ export default function Events() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          ) : (
+          ) : coachPhoneConfigured ? (
             <a
               href={coachWhatsAppUrl(
                 "Bună ziua! Am o întrebare despre competiții și evenimente.",
@@ -239,7 +240,7 @@ export default function Events() {
                 Întreabă antrenorul
               </Button>
             </a>
-          )
+          ) : null
         }
       />
 

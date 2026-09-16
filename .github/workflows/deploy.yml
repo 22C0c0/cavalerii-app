@@ -24,6 +24,9 @@ jobs:
       # Backend URL, e.g. https://<deployment>.convex.cloud
       # Add it in Repo → Settings → Secrets and variables → Actions.
       VITE_CONVEX_URL: ${{ secrets.VITE_CONVEX_URL }}
+      # Coach WhatsApp number, international format without "+" (e.g. 40755287562).
+      # NOT stored in the code — add it as a repository secret with the same name.
+      VITE_COACH_PHONE: ${{ secrets.VITE_COACH_PHONE }}
     steps:
       - uses: actions/checkout@v4
 

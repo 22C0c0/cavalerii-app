@@ -32,6 +32,21 @@ export const clubRoleValidator = v.union(
 );
 export type ClubRole = Infer<typeof clubRoleValidator>;
 
+// Rolurile de staff (antrenor, admin) NU se aleg la înregistrare — se atribuie
+// automat după email. Primele emailuri din listă au prioritate.
+export const STAFF_EMAILS = [
+  "cosmovicicosminmarian@gmail.com", // admin / owner
+  "antrenor@cavalieriisuceava.ro", // antrenor (placeholder — înlocuiește cu emailul real)
+];
+
+export const STAFF_ADMIN_EMAIL = STAFF_EMAILS[0];
+
+export function isStaffEmail(email?: string | null): boolean {
+  if (!email) return false;
+  const normalized = email.trim().toLowerCase();
+  return STAFF_EMAILS.includes(normalized);
+}
+
 export const LOCATIONS = [
   "Horodnic de Sus",
   'Școala Generală nr. 11 "Miron Costin" Suceava',

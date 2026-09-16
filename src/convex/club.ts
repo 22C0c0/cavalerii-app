@@ -1,9 +1,16 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
-import { mutation, query, QueryCtx } from "./_generated/server";
+import {
+  mutation,
+  query,
+  MutationCtx,
+  QueryCtx,
+} from "./_generated/server";
+import { syncStaffRole } from "./users";
 import {
   CLUB_ROLES,
   clubRoleValidator,
+  isStaffEmail,
   LOCATIONS,
   locationValidator,
 } from "./schema";
@@ -22,17 +29,19 @@ export async function requireUser(ctx: QueryCtx) {
   return user;
 }
 
-async function requireStaff(ctx: QueryCtx) {
+async function requireStaff(ctx: MutationCtx) {
   const user = await requireUser(ctx);
-  if (
-    user.clubRole !== CLUB_ROLES.COACH &&
-    user.clubRole !== CLUB_ROLES.ADMIN
-  ) {
-    throw new Error(
-      "Acces permis doar antrenorului sau administratorului clubului.",
-    );
+  const storedRoleOk =
+    user.clubRole === CLUB_ROLES.COACH || user.clubRole === CLUB_ROLES.ADMIN;
+  if (storedRoleOk) return user;
+  // Defensive: un email de staff are drepturi chiar dacă rolul nu s-a persistat încă.
+  if (await syncStaffRole(ctx, user._id)) {
+    const fresh = await ctx.db.get(user._id);
+    if (fresh) return fresh;
   }
-  return user;
+  throw new Error(
+    "Acces permis doar antrenorului sau administratorului clubului.",
+  );
 }
 
 function todayISO() {
@@ -65,6 +74,27 @@ export const completeProfile = mutation({
   },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx);
+
+    // Rolurile de staff NU se pot alege la înregistrare — doar prin lista STAFF_EMAILS.
+    if (
+      args.clubRole === CLUB_ROLES.COACH ||
+      args.clubRole === CLUB_ROLES.ADMIN
+    ) {
+      throw new Error(
+        "Rolul de antrenor sau administrator nu poate fi ales la înregistrare.",
+      );
+    }
+
+    // Conturile de staff (email în STAFF_EMAILS) primesc automat rolul fixat —
+    // nu se suprascrie și ignoră alegerea din interfață.
+    if (isStaffEmail(user.email)) {
+      await syncStaffRole(ctx, user._id);
+      await ctx.db.patch(user._id, {
+        name: args.name.trim(),
+        phone: args.phone?.trim() || undefined,
+      });
+      return { ok: true };
+    }
 
     const patch: Record<string, unknown> = {
       name: args.name.trim(),

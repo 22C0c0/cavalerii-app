@@ -11,6 +11,7 @@ import {
   ROLE_LABELS,
   coachWhatsAppUrl,
   formatDateRO,
+  coachPhoneConfigured,
   formatDayName,
   formatLongDateRO,
   isStaff,
@@ -158,7 +159,8 @@ export default function Dashboard() {
             />
           </div>
 
-          {/* Quick contact */}
+          {/* Quick contact (doar dacă numărul e configurat) */}
+          {coachPhoneConfigured && (
           <Card className="club-card overflow-hidden">
             <CardContent className="flex flex-col items-start justify-between gap-4 border-gold/20 bg-gradient-to-r from-sidebar-accent to-sidebar p-6 text-sidebar-foreground sm:flex-row sm:items-center">
               <div>
@@ -181,6 +183,7 @@ export default function Dashboard() {
               </Button>
             </CardContent>
           </Card>
+          )}
         </div>
       )}
     </AppShell>

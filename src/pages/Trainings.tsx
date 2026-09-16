@@ -39,6 +39,7 @@ import { useAuth } from "@/hooks/use-auth";
 import {
   AGE_GROUPS,
   TRAINING_LOCATIONS,
+  coachPhoneConfigured,
   coachWhatsAppUrl,
   formatDateRO,
   formatDayName,
@@ -305,7 +306,7 @@ export default function Trainings() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          ) : (
+          ) : coachPhoneConfigured ? (
             <a
               href={coachWhatsAppUrl(
                 "Bună ziua! Am o întrebare despre programul de antrenamente.",
@@ -318,7 +319,7 @@ export default function Trainings() {
                 Întreabă antrenorul
               </Button>
             </a>
-          )
+          ) : null
         }
       />
 

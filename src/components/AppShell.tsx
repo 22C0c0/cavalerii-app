@@ -7,14 +7,20 @@ import {
   AGE_GROUPS,
   CLUB_NAME,
   ROLE_LABELS,
+  coachPhoneConfigured,
   coachWhatsAppUrl,
   initialsOf,
   isStaff,
 } from "@/lib/club";
 import { NotificationsBell } from "@/components/NotificationsBell";
+import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 import { CalendarCheck, CalendarDays, CreditCard, Home, Loader2, Megaphone, MessageCircle, Trophy } from "lucide-react";
 import type { ReactNode } from "react";
+import { useEffect } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { isStaffEmail } from "@/convex/schema";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -63,6 +69,21 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const syncMyStaffRole = useMutation(api.users.syncMyStaffRole);
+
+  // Backfill: conturile de staff (email în STAFF_EMAILS) primesc/sincronizează
+  // rolul automat, chiar dacă profilul e deja complet.
+  useEffect(() => {
+    if (
+      !isLoading &&
+      user &&
+      isStaffEmail(user.email) &&
+      user.clubRole !== "admin" &&
+      user.clubRole !== "coach"
+    ) {
+      void syncMyStaffRole().catch(() => {});
+    }
+  }, [isLoading, user, syncMyStaffRole]);
 
   const role = user?.clubRole ?? null;
   const staff = isStaff(role);
@@ -109,30 +130,32 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <div className="mx-5 mb-3 h-px bg-sidebar-border" />
 
-        {/* Contact antrenor */}
-        <div className="px-4 pb-4">
-          <a
-            href={coachWhatsAppUrl(
-              "Bună ziua! Vă contactez din aplicația ACS Cavalerii Suceava.",
-            )}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={cn(
-              "group flex items-center gap-3 rounded-xl border border-sidebar-border bg-sidebar-accent/50 px-3 py-3 transition-colors",
-              "hover:border-gold/40 hover:bg-sidebar-accent",
-            )}
-          >
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gold/15 text-gold">
-              <MessageCircle className="size-4" />
-            </span>
-            <span className="flex flex-col">
-              <span className="text-sm font-semibold">Contact antrenor</span>
-              <span className="text-xs text-sidebar-foreground/85 group-hover:text-gold">
-                WhatsApp — răspuns rapid
+        {/* Contact antrenor (vizibil doar dacă numărul e configurat) */}
+        {coachPhoneConfigured && (
+          <div className="px-4 pb-4">
+            <a
+              href={coachWhatsAppUrl(
+                "Bună ziua! Vă contactez din aplicația ACS Cavalerii Suceava.",
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(
+                "group flex items-center gap-3 rounded-xl border border-sidebar-border bg-sidebar-accent/50 px-3 py-3 transition-colors",
+                "hover:border-gold/40 hover:bg-sidebar-accent",
+              )}
+            >
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gold/15 text-gold">
+                <MessageCircle className="size-4" />
               </span>
-            </span>
-          </a>
-        </div>
+              <span className="flex flex-col">
+                <span className="text-sm font-semibold">Contact antrenor</span>
+                <span className="text-xs text-sidebar-foreground/85 group-hover:text-gold">
+                  WhatsApp — răspuns rapid
+                </span>
+              </span>
+            </a>
+          </div>
+        )}
 
         {/* user card */}
         <div className="border-t border-sidebar-border px-4 py-4">
@@ -171,17 +194,19 @@ export function AppShell({ children }: { children: ReactNode }) {
         </button>
         <div className="flex items-center gap-1.5">
           <NotificationsBell />
-          <a
-            href={coachWhatsAppUrl(
-              "Bună ziua! Vă contactez din aplicația ACS Cavalerii Suceava.",
-            )}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Contactează antrenorul pe WhatsApp"
-            className="flex size-9 items-center justify-center rounded-full bg-gold/15 text-gold transition-colors hover:bg-gold/25"
-          >
-            <MessageCircle className="size-4" />
-          </a>
+          {coachPhoneConfigured && (
+            <a
+              href={coachWhatsAppUrl(
+                "Bună ziua! Vă contactez din aplicația ACS Cavalerii Suceava.",
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Contactează antrenorul pe WhatsApp"
+              className="flex size-9 items-center justify-center rounded-full bg-gold/15 text-gold transition-colors hover:bg-gold/25"
+            >
+              <MessageCircle className="size-4" />
+            </a>
+          )}
           <LogoDropdown />
         </div>
       </header>
@@ -190,6 +215,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main className="px-4 pb-28 pt-5 sm:px-6 lg:ml-64 lg:px-8 lg:pb-12 lg:pt-8">
         <div className="mx-auto w-full max-w-5xl">{children}</div>
       </main>
+
+      {/* Buton plutitor WhatsApp (mobil) */}
+      <FloatingWhatsApp />
 
       {/* Mobile bottom navigation */}
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 lg:hidden">

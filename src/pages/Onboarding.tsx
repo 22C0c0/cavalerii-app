@@ -29,7 +29,7 @@ import {
   User,
   Users,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
@@ -42,10 +42,8 @@ const ROLE_ICONS: Record<ClubRole, typeof User> = {
 };
 
 const SELECTABLE_ROLES: ClubRole[] = [
-  CLUB_ROLES.COACH,
   CLUB_ROLES.ATHLETE,
   CLUB_ROLES.PARENT,
-  CLUB_ROLES.ADMIN,
 ];
 
 export default function Onboarding() {
@@ -53,6 +51,15 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const athletes = useQuery(api.club.listAthletes) ?? [];
   const completeProfile = useMutation(api.club.completeProfile);
+  const syncMyStaffRole = useMutation(api.users.syncMyStaffRole);
+
+  // Contul tău (email în STAFF_EMAILS) nu alege rol din listă — îl primește
+  // automat din backend, sincronizat aici la deschiderea paginii.
+  useEffect(() => {
+    if (!isLoading && user && user.clubRole !== "admin" && user.clubRole !== "coach") {
+      void syncMyStaffRole().catch(() => {});
+    }
+  }, [isLoading, user, syncMyStaffRole]);
 
   const [name, setName] = useState(user?.name ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
@@ -76,12 +83,16 @@ export default function Onboarding() {
     );
   }
 
+  const isStaffAccount =
+    user?.clubRole === "admin" || user?.clubRole === "coach";
+  const staffRole = isStaffAccount ? (user?.clubRole as ClubRole) : null;
+
   const handleSave = async () => {
     if (!name.trim()) {
       toast.error("Completează numele și prenumele.");
       return;
     }
-    if (!role) {
+    if (!role && !isStaffAccount) {
       toast.error("Alege rolul tău în club.");
       return;
     }
@@ -99,7 +110,9 @@ export default function Onboarding() {
     try {
       await completeProfile({
         name: name.trim(),
-        clubRole: role,
+        clubRole: isStaffAccount
+          ? (staffRole ?? CLUB_ROLES.COACH)
+          : (role as ClubRole),
         phone: phone.trim() || undefined,
         athleteId:
           role === CLUB_ROLES.PARENT && linkMode === "existing" && athleteId
@@ -171,6 +184,22 @@ export default function Onboarding() {
               />
             </div>
 
+            {isStaffAccount && staffRole ? (
+              <div className="flex items-center gap-3 rounded-xl border border-gold/40 bg-gold/10 p-4">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-gold text-gold-foreground">
+                  <Shield className="size-4" />
+                </span>
+                <span className="flex flex-col">
+                  <span className="text-sm font-semibold">
+                    {ROLE_LABELS[staffRole]} — cont de conducere
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    Rol atribuit automat pe emailul tău. Ai acces complet la
+                    gestionarea clubului.
+                  </span>
+                </span>
+              </div>
+            ) : (
             <div className="flex flex-col gap-3">
               <Label>Rolul tău în club</Label>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -208,6 +237,7 @@ export default function Onboarding() {
                 })}
               </div>
             </div>
+            )}
 
             {role === CLUB_ROLES.ATHLETE && (
               <div className="flex flex-col gap-2">
