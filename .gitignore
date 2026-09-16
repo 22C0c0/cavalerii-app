@@ -11,3 +11,7 @@ isolate
 .fontcache
 fonts.conf
 package-lock.json
+
+# Arhive locale de descărcare — nu în repo
+public/
+*.zip
