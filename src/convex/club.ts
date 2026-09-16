@@ -130,9 +130,29 @@ export const completeProfile = mutation({
   },
 });
 
+/**
+ * Lista sportivilor — vizibilă doar pentru staff și părinți (necesară pentru
+ * asocierea copilului la înregistrare și pentru prezențe). Protejează datele
+ * despre minori: orice alt cont autentificat primește eroare.
+ */
 export const listAthletes = query({
   args: {},
   handler: async (ctx) => {
+    const user = await requireUser(ctx);
+
+    const isStaff =
+      user.clubRole === CLUB_ROLES.COACH ||
+      user.clubRole === CLUB_ROLES.ADMIN;
+    // Un părinte fără profil complet încă se poate asocia — permite citirea.
+    const isParent =
+      user.clubRole === CLUB_ROLES.PARENT ||
+      (!user.profileComplete && user.clubRole === undefined);
+    if (!isStaff && !isParent) {
+      throw new Error(
+        "Lista sportivilor e disponibilă doar antrenorului, administratorului și părinților.",
+      );
+    }
+
     const athletes = await ctx.db
       .query("users")
       .filter((q) => q.eq(q.field("clubRole"), CLUB_ROLES.ATHLETE))

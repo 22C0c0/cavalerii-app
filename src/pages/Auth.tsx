@@ -16,7 +16,7 @@ import {
 
 import { useAuth } from "@/hooks/use-auth";
 import { ClubLogo } from "@/components/ClubLogo";
-import { ArrowLeft, ArrowRight, Loader2, Mail, ShieldCheck, UserX } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, Mail, ShieldCheck } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 
@@ -88,23 +88,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       setIsLoading(false);
 
       setOtp("");
-    }
-  };
-
-  const handleGuestLogin = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await signIn("anonymous");
-      navigate(redirect);
-    } catch (error) {
-      console.error("Guest login error:", error);
-      setError(
-        `Autentificarea ca invitat a eșuat: ${
-          error instanceof Error ? error.message : "eroare necunoscută"
-        }`,
-      );
-      setIsLoading(false);
     }
   };
 
@@ -208,28 +191,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                       <p className="mt-2 text-sm text-red-500">{error}</p>
                     )}
 
-                    <div className="mt-4">
-                      <div className="relative">
-                        <div className="absolute inset-0 flex items-center">
-                          <span className="w-full border-t" />
-                        </div>
-                        <div className="relative flex justify-center text-xs uppercase">
-                          <span className="bg-card px-2 text-muted-foreground">
-                            sau
-                          </span>
-                        </div>
-                      </div>
-
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="mt-4 w-full"
-                        onClick={handleGuestLogin}
-                        disabled={isLoading}
-                      >
-                        <UserX className="mr-2 h-4 w-4" />
-                        Continuă ca invitat
-                      </Button>
+                    <div className="mt-4 rounded-lg border border-gold/25 bg-gold/5 px-3 py-2 text-xs text-muted-foreground">
+                      Accesul se face exclusiv cu email + cod de verificare.
                     </div>
                   </CardContent>
                 </form>
